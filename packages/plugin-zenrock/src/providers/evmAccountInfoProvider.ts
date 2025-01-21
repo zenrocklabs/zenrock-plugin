@@ -6,7 +6,13 @@ import {
   type State,
   elizaLogger,
 } from '@elizaos/core';
-import type { Address, PublicClient, Chain, HttpTransport } from 'viem';
+import type {
+  Address,
+  PublicClient,
+  Chain,
+  HttpTransport,
+  Account,
+} from 'viem';
 import * as viemChains from 'viem/chains';
 
 export class RpcProvider {
@@ -20,7 +26,9 @@ export class RpcProvider {
     }
   }
 
-  getClient(chainName: string): PublicClient<HttpTransport, Chain, undefined> {
+  getClient(
+    chainName: string
+  ): PublicClient<HttpTransport, Chain, Account | undefined> {
     const transport = http(this.rpcUrl);
     return createPublicClient({
       chain: this.chains[chainName],
