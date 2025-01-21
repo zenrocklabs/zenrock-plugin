@@ -75,7 +75,7 @@ export const evmAccountInfoProvider: Provider = {
       console.log(`EVM RPC PROVIDER GET CALLED`);
 
       const rpcUrl = runtime.getSetting('ZR_EVM_RPC') as string;
-      const address = runtime.getSetting('EVM_WALLET_ADDRESS') as Address;
+      const address = runtime.getSetting('ZR_EVM_WALLET_ADDRESS') as Address;
       const chainName = 'holesky';
       const provider = new RpcProvider(rpcUrl);
 
