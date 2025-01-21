@@ -13,6 +13,7 @@ import type {
   HttpTransport,
   Account,
 } from 'viem';
+import { isAddress } from 'viem';
 import * as viemChains from 'viem/chains';
 
 export class RpcProvider {
@@ -76,9 +77,12 @@ export const evmAccountInfoProvider: Provider = {
 
       const rpcUrl = runtime.getSetting('ZR_EVM_RPC') as string;
       const address = runtime.getSetting('ZR_EVM_WALLET_ADDRESS') as Address;
-      const chainName = 'holesky';
-      const provider = new RpcProvider(rpcUrl);
+      if (!address || !isAddress(address)) {
+        throw new Error('Invalid or missing Ethereum wallet address');
+      }
 
+      const chainName = 'Holesky';
+      const provider = new RpcProvider(rpcUrl);
       const nonce = await provider.getAccountNonce(address, chainName);
       const balance = await provider.getAccountBalance(address, chainName);
 
