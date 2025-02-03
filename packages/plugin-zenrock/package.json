@@ -1,0 +1,48 @@
+{
+  "name": "@elizaos/plugin-zenrock",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": {
+        "@elizaos/source": "./src/index.ts",
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "description": "",
+  "scripts": {
+    "fmt": "prettier --write \"**/*.{js,jsx,json,md,ts,tsx}\"",
+    "build": "tsup --format esm --dts",
+    "dev": "tsup --format esm --dts --watch",
+    "test": "vitest run",
+    "lint": "eslint --fix  --cache ."
+  },
+  "keywords": [],
+  "author": "Venimir Petkov",
+  "license": "ISC",
+  "devDependencies": {
+    "prettier": "3.4.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.2.3",
+    "@cosmjs/crypto": "^0.33.0",
+    "@cosmjs/encoding": "^0.33.0",
+    "@cosmjs/proto-signing": "^0.33.0",
+    "@cosmjs/stargate": "^0.33.0",
+    "@elizaos/core": "workspace:*",
+    "ethers": "6.13.4",
+    "viem": "2.21.58",
+    "wire": "link:@bufbuild/protobuf/wire"
+  }
+}
