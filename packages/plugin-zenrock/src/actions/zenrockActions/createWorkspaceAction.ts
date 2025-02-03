@@ -1,6 +1,7 @@
 import { Action, Content, IAgentRuntime, Memory, State } from '@elizaos/core';
 import { createWorkspace } from '../../utils/zenrock/workspace/workspace';
 import { toUtf8String } from '../../utils/zenrock/utils';
+import { generateWalletWithUUID } from '../../utils/zenrock/agentWallet';
 
 export interface CreateWorkspaceContent extends Content {
   adminPolicyId?: number;
@@ -28,7 +29,14 @@ export const createWorkspaceAction: Action = {
       const content = message.content as CreateWorkspaceContent;
       const adminPolicyId = content.adminPolicyId ?? 0;
       const signPolicyId = content.signPolicyId ?? 0;
-      const additionalOwners = content.additionalOwners ?? [];
+      let additionalOwners = content.additionalOwners ?? [];
+
+      const userId = message.userId;
+      if (!userId) {
+        throw new Error('User ID is missing in the request.');
+      }
+      const { address } = await generateWalletWithUUID(userId);
+      additionalOwners.push(address);
 
       const result = await createWorkspace(
         adminPolicyId,
