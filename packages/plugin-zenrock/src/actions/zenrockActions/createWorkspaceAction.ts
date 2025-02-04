@@ -1,5 +1,5 @@
 import { Action, Content, IAgentRuntime, Memory, State } from '@elizaos/core';
-import { createWorkspace } from '../../utils/zenrock/workspace/workspace';
+import { createWorkspace } from '../../utils/zenrock/workspace/workspaceService';
 import { toUtf8String } from '../../utils/zenrock/utils';
 import { generateWalletWithUUID } from '../../utils/zenrock/agentWallet';
 
@@ -23,7 +23,7 @@ export const createWorkspaceAction: Action = {
     callback?: (response: any) => void
   ) => {
     console.log('🔑 Creating workspace...');
-
+    
     try {
       // Extract content from the message
       const content = message.content as CreateWorkspaceContent;

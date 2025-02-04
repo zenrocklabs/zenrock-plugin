@@ -29,7 +29,7 @@ export const createWorkspaceEvaluator: Evaluator = {
   similes: ['workspace storage', 'transaction tracking'],
   description:
     'Extracts the workspace address and transaction hash from the createWorkspace response and stores them in memory.',
-
+  alwaysRun: true,
   validate: async (runtime: IAgentRuntime) => {
     let memoryManager = runtime.getMemoryManager('workspaceMemory');
 
@@ -66,7 +66,7 @@ export const createWorkspaceEvaluator: Evaluator = {
     console.log('🧠 Evaluating workspace creation response...');
 
     const content = memory.content as unknown as WorkspaceMemoryContent;
-
+    console.log('content: ', content);
     if (!content || !content.success) {
       console.log('❌ No successful workspace creation detected.');
       return {

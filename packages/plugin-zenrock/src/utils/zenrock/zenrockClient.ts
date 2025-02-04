@@ -3,13 +3,25 @@ import {
   GeneratedType,
   Registry,
 } from '@cosmjs/proto-signing';
-import { SigningStargateClient, StdFee } from '@cosmjs/stargate';
+import {
+  createProtobufRpcClient,
+  QueryClient,
+  SigningStargateClient,
+  StdFee,
+} from '@cosmjs/stargate';
 import { MsgNewWorkspace } from '../../types/zenrock/workspace/tx';
+import { QueryClientImpl } from './workspace/zrchain/query';
+import { Tendermint34Client } from '@cosmjs/tendermint-rpc';
+import { MsgNewKeyRequest } from './treasury/zrchain/tx';
 
 const zrRegistry = new Registry([
   [
     '/zrchain.identity.MsgNewWorkspace',
     MsgNewWorkspace as unknown as GeneratedType,
+  ],
+  [
+    '/zrchain.treasury.MsgNewKeyRequest',
+    MsgNewKeyRequest as unknown as GeneratedType,
   ],
 ]);
 
@@ -24,6 +36,23 @@ export async function getZenrockClient(
     registry: zrRegistry,
   });
   return client;
+}
+
+/**
+ * Creates an RPC-compatible gRPC client.
+ */
+export async function getZenrockWorkspaceQueryClient(
+  rpcUrl: string
+): Promise<QueryClientImpl> {
+  // Create a Tendermint client to connect to the RPC endpoint
+  const tmClient = await Tendermint34Client.connect(rpcUrl);
+  // Create a query client using the Tendermint client
+  const queryClient = new QueryClient(tmClient);
+  // Create a Protobuf RPC client from the query client
+  const rpc = createProtobufRpcClient(queryClient);
+  // Instantiate the generated query service using the RPC client
+  const queryService = new QueryClientImpl(rpc);
+  return queryService;
 }
 
 export async function broadcastTransaction(
