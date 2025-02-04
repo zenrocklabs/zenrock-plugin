@@ -1,6 +1,7 @@
 import {
   broadcastTransaction,
   getZenrockClient,
+  getZenrockKeyQueryClient,
   getZenrockWorkspaceQueryClient,
 } from '../zenrockClient';
 import { generateWallet } from '../agentWallet';
@@ -8,6 +9,8 @@ import { DEFAULT_AMOUNT, DEFAULT_GAS, DENOM, normalizeKeyType } from '../utils';
 import { StdFee } from '@cosmjs/stargate';
 import { KeyType } from '../treasury/zrchain/key';
 import { QueryWorkspacesRequest } from './zrchain/query';
+import { QueryKeyByIDRequest } from '../treasury/zrchain/query';
+import { WalletType } from '../treasury/zrchain/wallet';
 
 const rpcUrl: string =
   process.env.ZR_RPC ??
@@ -58,7 +61,7 @@ export async function createWorkspace(
  */
 export async function queryWorkspaceByOwner(
   ownerAddress: string = '',
-  creator: string = '',
+  creator: string = ''
 ) {
   if (!ownerAddress) {
     throw new Error('❌ Owner address is required.');
@@ -137,7 +140,6 @@ export async function requestMPCKey(
     [msgRequestKey],
     fee
   );
-
   if (result.code === 0) {
     console.log(
       `✅ MPC Key Request Successful! TxHash: ${result.transactionHash}`
@@ -145,6 +147,52 @@ export async function requestMPCKey(
   } else {
     console.error(`❌ MPC Key Request Failed: ${result.rawLog}`);
   }
+  const queryClient = await getZenrockKeyQueryClient(rpcUrl);
 
-  return result;
+  const reqId = result.msgResponses[0].value[1]; // Uint8Array
+
+  const request: QueryKeyByIDRequest = {
+    id: reqId,
+    walletType: WalletType.WALLET_TYPE_EVM,
+    prefixes: ['zen'],
+  };
+
+  const sleep = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+  const retries = 5,
+    delay = 1000;
+
+  await sleep(10000); // Initial 10-second delay
+
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response = await queryClient.KeyByID(request);
+
+      // Ensure wallets exist and at least one wallet is present
+      if (!response.wallets || response.wallets.length === 0) {
+        throw new Error(
+          `Response does not contain wallets: ${JSON.stringify(
+            response,
+            null,
+            2
+          )}`
+        );
+      }
+
+      // Use the first wallet since only one is present
+      const walletAddress = response.wallets[0].address;
+      console.log('✅ Key response retrieved:', walletAddress);
+      return walletAddress;
+    } catch (error) {
+      console.error(`❌ Attempt ${attempt + 1} failed:`, error);
+
+      if (attempt < retries - 1) {
+        console.log(`⏳ Retrying in ${delay / 1000} seconds...`);
+        await sleep(delay);
+      } else {
+        console.error('🚨 All retry attempts failed.');
+        throw error;
+      }
+    }
+  }
 }

@@ -10,9 +10,10 @@ import {
   StdFee,
 } from '@cosmjs/stargate';
 import { MsgNewWorkspace } from '../../types/zenrock/workspace/tx';
-import { QueryClientImpl } from './workspace/zrchain/query';
 import { Tendermint34Client } from '@cosmjs/tendermint-rpc';
 import { MsgNewKeyRequest } from './treasury/zrchain/tx';
+import { QueryClientImpl as WorkspaceQueryClient } from './workspace/zrchain/query';
+import { QueryClientImpl as TreasuryQueryClient } from './treasury/zrchain/query';
 
 const zrRegistry = new Registry([
   [
@@ -41,9 +42,7 @@ export async function getZenrockClient(
 /**
  * Creates an RPC-compatible gRPC client.
  */
-export async function getZenrockWorkspaceQueryClient(
-  rpcUrl: string
-): Promise<QueryClientImpl> {
+export async function getZenrockWorkspaceQueryClient(rpcUrl: string): Promise<WorkspaceQueryClient> {
   // Create a Tendermint client to connect to the RPC endpoint
   const tmClient = await Tendermint34Client.connect(rpcUrl);
   // Create a query client using the Tendermint client
@@ -51,10 +50,21 @@ export async function getZenrockWorkspaceQueryClient(
   // Create a Protobuf RPC client from the query client
   const rpc = createProtobufRpcClient(queryClient);
   // Instantiate the generated query service using the RPC client
-  const queryService = new QueryClientImpl(rpc);
+  const queryService = new WorkspaceQueryClient(rpc);
   return queryService;
 }
 
+export async function getZenrockKeyQueryClient(rpcUrl: string): Promise<TreasuryQueryClient> {
+  // Create a Tendermint client to connect to the RPC endpoint
+  const tmClient = await Tendermint34Client.connect(rpcUrl);
+  // Create a query client using the Tendermint client
+  const queryClient = new QueryClient(tmClient);
+  // Create a Protobuf RPC client from the query client
+  const rpc = createProtobufRpcClient(queryClient);
+  // Instantiate the generated query service using the RPC client
+  const queryService = new TreasuryQueryClient(rpc);
+  return queryService;
+}
 export async function broadcastTransaction(
   client: SigningStargateClient,
   address: string,
