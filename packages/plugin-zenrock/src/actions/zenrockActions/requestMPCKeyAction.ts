@@ -2,7 +2,7 @@ import { Action, Content, IAgentRuntime, Memory, State } from '@elizaos/core';
 import { requestMPCKey } from '../../utils/zenrock/workspace/workspaceService';
 
 export interface RequestMPCKeyContent extends Content {
-  workspace: string;
+  workspace?: string; // Made optional for extraction from text if missing
 }
 
 export const requestMPCKeyAction: Action = {
@@ -18,17 +18,27 @@ export const requestMPCKeyAction: Action = {
     _options?: any,
     callback?: (response: any) => void
   ) => {
-    // If state is not provided, throw an error
+    // Ensure state is provided.
     if (!state) {
       throw new Error('State is required but was undefined.');
     }
     console.log('🔑 Requesting MPC key...');
     try {
+      // Cast the message content
       const content = message.content as RequestMPCKeyContent;
-      if (!content.workspace) {
-        throw new Error('Workspace address is required.');
+      console.log('content from the conversation: ', JSON.stringify(content));
+      // This regex matches any substring that starts with "workspace" followed by letters and/or digits.
+      const match = content.text.match(/(workspace[\w\d]+)/i);
+      if (match && match[1]) {
+        content.workspace = match[1];
+        console.log(`Extracted workspace: ${content.workspace}`);
+      } else {
+        throw new Error(
+          'Workspace address could not be extracted from the text.'
+        );
       }
-      console.log('content: ', JSON.stringify(content));
+
+      // Request the MPC key using the extracted or provided workspace address.
       const result = await requestMPCKey(content.workspace);
       if (!result) {
         throw new Error('no result');
@@ -37,7 +47,7 @@ export const requestMPCKeyAction: Action = {
       if (callback) {
         callback({
           text: `MPC Key has been successfully created!
-          address: ${result}`,
+Address: ${result}`,
         });
       }
       return true;

@@ -162,7 +162,7 @@ export async function requestMPCKey(
   const retries = 5,
     delay = 1000;
 
-  await sleep(10000); // Initial 10-second delay
+  await sleep(15000); // Initial 15-second delay
 
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
