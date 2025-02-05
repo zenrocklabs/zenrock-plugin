@@ -1,5 +1,8 @@
 import { Provider, IAgentRuntime, Memory, State } from '@elizaos/core';
-import { queryWorkspaceByOwner } from '../../utils/zenrock/workspace/workspaceService'; // adjust the path as needed
+import {
+  queryKeysByWorkspace,
+  queryWorkspaceByOwner,
+} from '../../utils/zenrock/workspace/workspaceService'; // adjust the path as needed
 import { generateWalletWithUUID } from '../../utils/zenrock/agentWallet';
 
 const queryWorkspaceByOwnerProvider: Provider = {
@@ -20,14 +23,20 @@ const queryWorkspaceByOwnerProvider: Provider = {
       if (!workspaces || workspaces.length === 0) {
         return `No workspaces found for owner address: ${address}`;
       }
-
       // Format the retrieved workspaces into a user-friendly string.
-      const formattedWorkspaces = workspaces
-        .map(
-          (ws) =>
-            `Workspace address: ${ws.address || 'No address for Workspace'} (Owners: ${ws.owners || 'unknown'})`
-        )
-        .join('\n');
+      const formattedWorkspaces = await Promise.all(
+        workspaces.map(async (ws) => {
+          const keys = await queryKeysByWorkspace(ws.address);
+          const evmAddresses = keys
+            .flatMap((key) => key.wallets) 
+            .filter((wallet) => wallet.type === 'WALLET_TYPE_EVM')
+            .map((wallet) => wallet.address);
+
+          return `Workspace address: ${ws.address || 'No address for Workspace'} 
+                with Owners: ${ws.owners || 'unknown'} 
+                with generated keys: ${evmAddresses.join(', ')}`;
+        })
+      );
 
       return `User workspaces: \n${formattedWorkspaces}`;
     } catch (error) {
