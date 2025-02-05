@@ -11,7 +11,7 @@ import {
 } from '@cosmjs/stargate';
 import { MsgNewWorkspace } from '../../types/zenrock/workspace/tx';
 import { Tendermint34Client } from '@cosmjs/tendermint-rpc';
-import { MsgNewKeyRequest } from './treasury/zrchain/tx';
+import { MsgNewKeyRequest, MsgNewSignatureRequest } from './treasury/zrchain/tx';
 import { QueryClientImpl as WorkspaceQueryClient } from './workspace/zrchain/query';
 import { QueryClientImpl as TreasuryQueryClient } from './treasury/zrchain/query';
 
@@ -23,6 +23,10 @@ const zrRegistry = new Registry([
   [
     '/zrchain.treasury.MsgNewKeyRequest',
     MsgNewKeyRequest as unknown as GeneratedType,
+  ],
+  [
+    '/zrchain.treasury.MsgNewSignatureRequest',
+    MsgNewSignatureRequest as unknown as GeneratedType,
   ],
 ]);
 
