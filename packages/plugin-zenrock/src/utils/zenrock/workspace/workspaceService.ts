@@ -2,7 +2,6 @@ import {
   broadcastTransaction,
   getZenrockClient,
   getZenrockKeyQueryClient,
-  getZenrockSignatureQueryClient,
   getZenrockWorkspaceQueryClient,
 } from '../zenrockClient';
 import { generateWallet } from '../agentWallet';
@@ -10,7 +9,11 @@ import { DEFAULT_AMOUNT, DEFAULT_GAS, DENOM, normalizeKeyType } from '../utils';
 import { StdFee } from '@cosmjs/stargate';
 import { KeyType } from '../treasury/zrchain/key';
 import { QueryWorkspacesRequest } from './zrchain/query';
-import { QueryKeyByIDRequest, QuerySignatureRequestByIDRequest } from '../treasury/zrchain/query';
+import {
+  QueryKeyByIDRequest,
+  QueryKeysRequest,
+  QuerySignatureRequestByIDRequest,
+} from '../treasury/zrchain/query';
 import { WalletType } from '../treasury/zrchain/wallet';
 import { VerificationVersion } from '../treasury/zrchain/tx';
 
@@ -199,6 +202,34 @@ export async function requestMPCKey(
   }
 }
 
+/**
+ * Queries workspaces by owner address.
+ * @param ownerAddress - The address of the workspace owner.
+ * @returns A list of workspaces owned by the given address.
+ */
+export async function queryKeysByWorkspace(workspaceAddr: string) {
+  if (!workspaceAddr) {
+    throw new Error('❌ Workspace address is required.');
+  }
+
+  console.log('🔍 Querying keys for workspace:', workspaceAddr);
+  const queryClient = await getZenrockKeyQueryClient(rpcUrl);
+  const request: QueryKeysRequest = {
+    workspaceAddr: workspaceAddr,
+    walletType: 0,
+    prefixes: [],
+    pagination: undefined,
+  };
+
+  try {
+    const response = await queryClient.Keys(request);
+    return response.keys;
+  } catch (error) {
+    console.error('❌ Error fetching workspaces:', error);
+    throw error;
+  }
+}
+
 export async function requestMPCSign(
   creator: string,
   keyId: number,
@@ -206,7 +237,7 @@ export async function requestMPCSign(
   btl: number,
   cacheId: Uint8Array,
   verifySigningData: Uint8Array,
-  verifySigningDataVersion: VerificationVersion,
+  verifySigningDataVersion: VerificationVersion
 ) {
   console.log('🔑 Preparing MPC signature request transaction...');
 
@@ -221,12 +252,10 @@ export async function requestMPCSign(
 
   console.log('✅ Using Account Address:', account[0].address);
   // const keyTypeStr = normalizeKeyType(keyType);
-  // console.log('✅ keyTypeStr:', keyTypeStr); 
+  // console.log('✅ keyTypeStr:', keyTypeStr);
 
   if (!dataForSigning) {
-    throw new Error(
-      `❌ Data for signing is missing or invalid.`
-    );
+    throw new Error(`❌ Data for signing is missing or invalid.`);
   }
 
   const msgRequestKey = {
@@ -282,7 +311,10 @@ export async function requestMPCSign(
       const response = await queryClient.SignatureRequestByID(request);
 
       // Ensure wallets exist and at least one wallet is present
-      if (!response.signRequest || response.signRequest.signedData.length === 0) {
+      if (
+        !response.signRequest ||
+        response.signRequest.signedData.length === 0
+      ) {
         throw new Error(
           `Response does not contain signature responses: ${JSON.stringify(
             response,
