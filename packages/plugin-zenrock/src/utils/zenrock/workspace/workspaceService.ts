@@ -16,7 +16,7 @@ import {
 } from '../treasury/zrchain/query';
 import { WalletType } from '../treasury/zrchain/wallet';
 import { VerificationVersion } from '../treasury/zrchain/tx';
-
+import { Any } from '../google/protobuf/any';
 const rpcUrl: string =
   process.env.ZR_RPC ??
   (() => {
@@ -315,6 +315,130 @@ export async function requestMPCSign(
         !response.signRequest ||
         response.signRequest.signedData.length === 0
       ) {
+        throw new Error(
+          `Response does not contain signature responses: ${JSON.stringify(
+            response,
+            null,
+            2
+          )}`
+        );
+      }
+
+      // Use the first wallet since only one is present
+      const signature = response.signRequest.signedData;
+      console.log('✅ Signature response retrieved:', signature);
+      console.log('✅ Signature request ID:', signature[0].signRequestId);
+      console.log('✅ Signature:', signature[0].signedData);
+      return signature;
+    } catch (error) {
+      console.error(`❌ Attempt ${attempt + 1} failed:`, error);
+
+      if (attempt < retries - 1) {
+        console.log(`⏳ Retrying in ${delay / 1000} seconds...`);
+        await sleep(delay);
+      } else {
+        console.error('🚨 All retry attempts failed.');
+        throw error;
+      }
+    }
+  }
+}
+
+export async function requestMPCSignTx(
+  creator: string,
+  keyId: number,
+  walletType: WalletType,
+  unsignedTransaction: Uint8Array,
+  metadata: Any | undefined,
+  btl: number,
+  cacheId: Uint8Array,
+  noBroadcast: boolean,
+) {
+  console.log('🔑 Preparing MPC signature request transaction...');
+
+  if (!keyId) {
+    throw new Error('❌ Key ID is missing or invalid.');
+  }
+  console.log('✅ Using Key ID:', keyId);
+
+  if (!walletType) {
+    throw new Error('❌ Wallet type is missing or invalid.');
+  }
+  console.log('✅ Using Wallet Type:', walletType);
+
+  if (!unsignedTransaction) {
+    throw new Error('❌ Unsigned transaction is missing or invalid.');
+  }
+  console.log('✅ Using Unsigned Transaction:', unsignedTransaction);
+
+  if (!metadata) {
+    throw new Error('❌ Metadata is missing or invalid.');
+  }
+  console.log('✅ Using Metadata:', metadata);
+
+  const { wallet } = await generateWallet();
+  const client = await getZenrockClient(rpcUrl, wallet);
+  const account = await wallet.getAccounts();
+
+  console.log('✅ Using Account Address:', account[0].address);
+  // const keyTypeStr = normalizeKeyType(keyType);
+  // console.log('✅ keyTypeStr:', keyTypeStr); 
+
+  const msgRequestSignTransaction = {
+    typeUrl: '/zrchain.treasury.MsgNewSignTransactionRequest',
+    value: {
+      creator: account[0].address,
+      keyId,
+      walletType,
+      unsignedTransaction,
+      metadata,
+      btl,
+      cacheId,
+      noBroadcast,
+    },
+  };
+
+  // Define transaction fee
+  const fee: StdFee = {
+    amount: [{ denom: DENOM, amount: DEFAULT_AMOUNT.toString() }],
+    gas: DEFAULT_GAS.toString(),
+  };
+
+  console.log('\n🚀 Sending MPC transaction signature request transaction...');
+  const result = await broadcastTransaction(
+    client,
+    account[0].address,
+    [msgRequestSignTransaction],
+    fee
+  );
+  if (result.code === 0) {
+    console.log(
+      `✅ MPC Sign Transaction Request Successful! TxHash: ${result.transactionHash}`
+    );
+  } else {
+    console.error(`❌ MPC Sign Transaction Request Failed: ${result.rawLog}`);
+  }
+  const queryClient = await getZenrockKeyQueryClient(rpcUrl);
+
+  const signId = result.msgResponses[0].value[1]; // Uint8Array
+
+  const request: QuerySignatureRequestByIDRequest = {
+    id: signId,
+  };
+
+  const sleep = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+  const retries = 5,
+    delay = 1000;
+
+  await sleep(15000); // Initial 15-second delay
+
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response = await queryClient.SignatureRequestByID(request);
+
+      // Ensure wallets exist and at least one wallet is present
+      if (!response.signRequest || response.signRequest.signedData.length === 0) {
         throw new Error(
           `Response does not contain signature responses: ${JSON.stringify(
             response,
