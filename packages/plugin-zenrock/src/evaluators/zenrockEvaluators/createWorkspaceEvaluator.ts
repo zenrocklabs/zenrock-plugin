@@ -6,6 +6,7 @@ import {
   ServiceType,
   ITextGenerationService,
   IMemoryManager,
+  Content,
 } from '@elizaos/core';
 
 interface WorkspaceMemory {
@@ -64,16 +65,8 @@ export const createWorkspaceEvaluator: Evaluator = {
   handler: async (runtime: IAgentRuntime, memory: Memory, state: State) => {
     console.log('🧠 Evaluating workspace creation response...');
 
-    const content = memory.content as unknown as WorkspaceMemoryContent;
+    const content = memory.content as Content as WorkspaceMemoryContent;
     console.log('content: ', content);
-    if (!content || !content.success) {
-      console.log('❌ No successful workspace creation detected.');
-      return {
-        score: 0,
-        reason:
-          'Workspace creation was unsuccessful or no relevant data found.',
-      };
-    }
 
     // Extract workspace address that starts with "workspace"
     const workspaceAddressMatch = content.text.match(/(workspace\w+)/);

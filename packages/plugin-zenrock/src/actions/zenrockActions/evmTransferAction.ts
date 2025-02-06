@@ -14,7 +14,20 @@ import {
   extractEVMTxParamsFromContex,
 } from '../../utils/zenrock/instructionTemplates';
 import { createUnsignedTx } from '../../utils/evm/unsignedEVMTxService';
-
+import {
+  queryKeyByAddress,
+  requestMPCSign,
+} from '../../utils/zenrock/workspace/workspaceService';
+import {
+  broadcastEVMTransaction,
+  toSignedTransaction,
+} from '../../utils/evm/client';
+import { bytesToHex } from 'viem';
+const rpcUrl: string =
+  process.env.ZR_EVM_RPC ??
+  (() => {
+    throw new Error('ZR_RPC environment variable is not set.');
+  })();
 export interface RequestMPCSignTxContent extends Content {
   creator?: string;
   keyId: number;
@@ -32,7 +45,7 @@ export const evmTransferAction: Action = {
   description: `Requests a new transaction signature for an EVM transfer on the Zenrock blockchain.
 This action extracts EVM transaction parameters from the user's message using the provided extraction instructions.
 Never ask for confirmation, always proceed with the transaction.`,
-  
+
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
@@ -58,9 +71,41 @@ Never ask for confirmation, always proceed with the transaction.`,
       const { unsignedTx, txHash } = await createUnsignedTx(evmTxParams);
       console.log('unsignedTx:', unsignedTx);
       console.log('txHash:', txHash);
+      const key = await queryKeyByAddress(evmTxParams.from);
+      let cleanTxHash = txHash.startsWith('0x') ? txHash.slice(2) : txHash;
+
+      const result = await requestMPCSign(
+        '',
+        key.key.id,
+        cleanTxHash,
+        0,
+        undefined,
+        undefined,
+        undefined
+      );
+      if (!result) {
+        throw new Error('no result');
+      }
+      console.log(`✅ MPC Signature Request Successful! TxHash: ${result}`);
+      const signature = result[0].signedData;
+      const hexSignature = Buffer.from(signature).toString('hex'); // Convert signedData to hex
+      console.log(`✅ MPC Signature: ${hexSignature}`);
+      const signedTx = await toSignedTransaction(
+        unsignedTx,
+        hexSignature,
+        bytesToHex(key.key.publicKey),
+        txHash
+      );
+      const hash = await broadcastEVMTransaction(signedTx, rpcUrl);
+      if (callback) {
+        callback({
+          text: `Transaction has been broadcasted to ${evmTxParams.network}
+          Here is the tx hash: https://holesky.etherscan.io/tx/${hash}`,
+        });
+      }
       return true;
     } catch (error: any) {
-      const errorText = `❌ Error requesting MPC Signature Transaction: ${error.message || error}`;
+      const errorText = `❌ Error requesting MPC Signature: ${error.message || error}`;
       console.error(errorText);
       if (callback) {
         callback({

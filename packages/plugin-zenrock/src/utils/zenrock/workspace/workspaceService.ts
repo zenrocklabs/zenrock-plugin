@@ -10,6 +10,7 @@ import { StdFee } from '@cosmjs/stargate';
 import { KeyType } from '../treasury/zrchain/key';
 import { QueryWorkspacesRequest } from './zrchain/query';
 import {
+  QueryKeyByAddressRequest,
   QueryKeyByIDRequest,
   QueryKeysRequest,
   QuerySignatureRequestByIDRequest,
@@ -82,7 +83,7 @@ export async function queryWorkspaceByOwner(
 
   try {
     const response = await queryClient.Workspaces(request);
-    console.log('✅ Workspaces retrieved:', response.workspaces);
+    // console.log('✅ Workspaces retrieved:', response.workspaces);
     return response.workspaces;
   } catch (error) {
     console.error('❌ Error fetching workspaces:', error);
@@ -138,7 +139,7 @@ export async function requestMPCKey(
     gas: DEFAULT_GAS.toString(),
   };
 
-  console.log('\n🚀 Sending MPC key request transaction...');
+  // console.log('\n🚀 Sending MPC key request transaction...');
   const result = await broadcastTransaction(
     client,
     account[0].address,
@@ -146,9 +147,9 @@ export async function requestMPCKey(
     fee
   );
   if (result.code === 0) {
-    console.log(
-      `✅ MPC Key Request Successful! TxHash: ${result.transactionHash}`
-    );
+    // console.log(
+    //   `✅ MPC Key Request Successful! TxHash: ${result.transactionHash}`
+    // );
   } else {
     console.error(`❌ MPC Key Request Failed: ${result.rawLog}`);
   }
@@ -186,7 +187,7 @@ export async function requestMPCKey(
 
       // Use the first wallet since only one is present
       const walletAddress = response.wallets[0].address;
-      console.log('✅ Key response retrieved:', walletAddress);
+      // console.log('✅ Key response retrieved:', walletAddress);
       return walletAddress;
     } catch (error) {
       console.error(`❌ Attempt ${attempt + 1} failed:`, error);
@@ -212,7 +213,7 @@ export async function queryKeysByWorkspace(workspaceAddr: string) {
     throw new Error('❌ Workspace address is required.');
   }
 
-  console.log('🔍 Querying keys for workspace:', workspaceAddr);
+  // console.log('🔍 Querying keys for workspace:', workspaceAddr);
   const queryClient = await getZenrockKeyQueryClient(rpcUrl);
   const request: QueryKeysRequest = {
     workspaceAddr: workspaceAddr,
@@ -224,6 +225,31 @@ export async function queryKeysByWorkspace(workspaceAddr: string) {
   try {
     const response = await queryClient.Keys(request);
     return response.keys;
+  } catch (error) {
+    console.error('❌ Error fetching workspaces:', error);
+    throw error;
+  }
+}
+
+export async function queryKeyByAddress(keyAddress: string) {
+  if (!keyAddress) {
+    throw new Error('❌ Key address is required.');
+  }
+
+  console.log('🔍 Querying for key by address:', keyAddress);
+  const queryClient = await getZenrockKeyQueryClient(rpcUrl);
+  const request: QueryKeyByAddressRequest = {
+    address: keyAddress,
+    keyringAddr: '',
+    keyType: KeyType.KEY_TYPE_ECDSA_SECP256K1,
+    walletType: WalletType.WALLET_TYPE_EVM,
+    prefixes: [],
+  };
+
+  try {
+    const response = await queryClient.KeyByAddress(request);
+    console.log('✅ Key retrieved:', response.response);
+    return response.response;
   } catch (error) {
     console.error('❌ Error fetching workspaces:', error);
     throw error;
@@ -250,7 +276,7 @@ export async function requestMPCSign(
   const client = await getZenrockClient(rpcUrl, wallet);
   const account = await wallet.getAccounts();
 
-  console.log('✅ Using Account Address:', account[0].address);
+  // console.log('✅ Using Account Address:', account[0].address);
   // const keyTypeStr = normalizeKeyType(keyType);
   // console.log('✅ keyTypeStr:', keyTypeStr);
 
@@ -277,7 +303,7 @@ export async function requestMPCSign(
     gas: DEFAULT_GAS.toString(),
   };
 
-  console.log('\n🚀 Sending MPC signature request transaction...');
+  // console.log('\n🚀 Sending MPC signature request transaction...');
   const result = await broadcastTransaction(
     client,
     account[0].address,
@@ -285,9 +311,9 @@ export async function requestMPCSign(
     fee
   );
   if (result.code === 0) {
-    console.log(
-      `✅ MPC Signature Request Successful! TxHash: ${result.transactionHash}`
-    );
+    // console.log(
+    //   `✅ MPC Signature Request Successful! TxHash: ${result.transactionHash}`
+    // );
   } else {
     console.error(`❌ MPC Signature Request Failed: ${result.rawLog}`);
   }
@@ -326,9 +352,9 @@ export async function requestMPCSign(
 
       // Use the first wallet since only one is present
       const signature = response.signRequest.signedData;
-      console.log('✅ Signature response retrieved:', signature);
-      console.log('✅ Signature request ID:', signature[0].signRequestId);
-      console.log('✅ Signature:', signature[0].signedData);
+      // console.log('✅ Signature response retrieved:', signature);
+      // console.log('✅ Signature request ID:', signature[0].signRequestId);
+      // console.log('✅ Signature:', signature[0].signedData);
       return signature;
     } catch (error) {
       console.error(`❌ Attempt ${attempt + 1} failed:`, error);
@@ -352,7 +378,7 @@ export async function requestMPCSignTx(
   metadata: Any | undefined,
   btl: number,
   cacheId: Uint8Array,
-  noBroadcast: boolean,
+  noBroadcast: boolean
 ) {
   console.log('🔑 Preparing MPC signature request transaction...');
 
@@ -382,7 +408,7 @@ export async function requestMPCSignTx(
 
   console.log('✅ Using Account Address:', account[0].address);
   // const keyTypeStr = normalizeKeyType(keyType);
-  // console.log('✅ keyTypeStr:', keyTypeStr); 
+  // console.log('✅ keyTypeStr:', keyTypeStr);
 
   const msgRequestSignTransaction = {
     typeUrl: '/zrchain.treasury.MsgNewSignTransactionRequest',
@@ -438,7 +464,10 @@ export async function requestMPCSignTx(
       const response = await queryClient.SignatureRequestByID(request);
 
       // Ensure wallets exist and at least one wallet is present
-      if (!response.signRequest || response.signRequest.signedData.length === 0) {
+      if (
+        !response.signRequest ||
+        response.signRequest.signedData.length === 0
+      ) {
         throw new Error(
           `Response does not contain signature responses: ${JSON.stringify(
             response,

@@ -26,7 +26,7 @@ export const requestMPCKeyAction: Action = {
     try {
       // Cast the message content
       const content = message.content as RequestMPCKeyContent;
-      console.log('content from the conversation: ', JSON.stringify(content));
+    //   console.log('content from the conversation: ', JSON.stringify(content));
       // This regex matches any substring that starts with "workspace" followed by letters and/or digits.
       const match = content.text.match(/(workspace[\w\d]+)/i);
       if (match && match[1]) {
@@ -46,8 +46,7 @@ export const requestMPCKeyAction: Action = {
       console.log(`✅ MPC Key Request Successful! TxHash: ${result}`);
       if (callback) {
         callback({
-          text: `MPC Key has been successfully created!
-Address: ${result}`,
+          text: `MPC Key has been successfully created! Address: ${result}`,
         });
       }
       return true;
