@@ -30,7 +30,7 @@ export async function createUnsignedTx(
     nonce,
     maxFeePerGas,
     maxPriorityFeePerGas,
-    gas: 0n, // placeholder, will be replaced after estimation
+    gas: 0n, 
     to: evmTxParams.to as `0x${string}`,
     value: evmTxParams.isNativeTransfer
       ? BigInt(Math.round(Number(evmTxParams.value) * 1e18))
@@ -41,8 +41,8 @@ export async function createUnsignedTx(
   };
 
   if (!evmTxParams.isNativeTransfer) {
-    const tokenContractAddress = process.env.TOKEN_CONTRACT_ADDRESS;
-    if (!tokenContractAddress) {
+    const tokenContractAddress = evmTxParams.contractAddress;
+    if (!tokenContractAddress || tokenContractAddress.length === 0) {
       throw new Error(
         'TOKEN_CONTRACT_ADDRESS is not defined in environment variables'
       );
@@ -57,12 +57,27 @@ export async function createUnsignedTx(
         ],
         outputs: [{ name: '', type: 'bool' }],
       },
+      {
+        name: 'decimals',
+        type: 'function',
+        inputs: [],
+        outputs: [{ name: '', type: 'uint8' }],
+        constant: true,
+      },
     ];
+
+    const decimals = await client.readContract({
+      address: tokenContractAddress as `0x${string}`,
+      abi: erc20Abi,
+      functionName: 'decimals',
+    });
+
     const data = encodeFunctionData({
       abi: erc20Abi,
       functionName: 'transfer',
-      args: [evmTxParams.to, parseUnits(evmTxParams.value.toString(), 18)],
+      args: [evmTxParams.to, parseUnits(evmTxParams.value.toString(), decimals as number)],
     });
+
     tx.to = tokenContractAddress as `0x${string}`;
     tx.data = data as `0x${string}`;
   }
@@ -75,13 +90,13 @@ export async function createUnsignedTx(
   });
   tx.gas = gasLimit;
 
-  const dummySignature: Signature = {
+  const signaturePlaceholder: Signature = {
     r: '0x',
     s: '0x',
     v: undefined,
   };
 
-  const serializedTx = serializeTransaction(tx, dummySignature);
+  const serializedTx = serializeTransaction(tx, signaturePlaceholder);
   const unsignedTx = serializedTx.startsWith('0x')
     ? serializedTx.slice(2)
     : serializedTx;
