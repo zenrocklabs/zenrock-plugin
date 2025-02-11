@@ -76,7 +76,7 @@ export async function broadcastTransaction(
   fee: StdFee,
   memo: string = ''
 ) {
-  console.log('\n✍️ Signing and broadcasting transaction...');
+  console.log('\n✍️  Signing and broadcasting transaction...');
   const result = await client.signAndBroadcast(address, messages, fee, memo);
   if (result.code === 0) {
     console.log(`✅ Transaction successful! TxHash: ${result.transactionHash}`);
@@ -84,4 +84,16 @@ export async function broadcastTransaction(
     console.error(`❌ Transaction failed: ${result.rawLog}`);
   }
   return result;
+}
+
+export async function getZenrockSignatureQueryClient(rpcUrl: string): Promise<TreasuryQueryClient> {
+  // Create a Tendermint client to connect to the RPC endpoint
+  const tmClient = await Tendermint34Client.connect(rpcUrl);
+  // Create a query client using the Tendermint client
+  const queryClient = new QueryClient(tmClient);
+  // Create a Protobuf RPC client from the query client
+  const rpc = createProtobufRpcClient(queryClient);
+  // Instantiate the generated query service using the RPC client
+  const queryService = new TreasuryQueryClient(rpc);
+  return queryService;
 }

@@ -4,12 +4,18 @@ import { requestMPCKeyAction } from './actions/zenrockActions/requestMPCKeyActio
 import { requestMPCSignAction } from './actions/zenrockActions/requestMPCSignAction';
 import { createWorkspaceEvaluator } from './evaluators/zenrockEvaluators/createWorkspaceEvaluator';
 import { queryWorkspaceByOwnerProvider } from './providers/zenrockProviders/queryWorkspaceByOwnerProvider';
+import { evmTransferAction } from './actions/zenrockActions/evmTransferAction';
 
 export const zenrockPlugin: Plugin = {
   name: 'zenrock',
   description:
     'Zenrock plugin to generate dMPC keys, sign unsigned payloads and broadcast transaaction multi chain',
-  actions: [createWorkspaceAction, requestMPCKeyAction, requestMPCSignAction],
+  actions: [
+    createWorkspaceAction,
+    requestMPCKeyAction,
+    requestMPCSignAction,
+    evmTransferAction,
+  ],
   evaluators: [createWorkspaceEvaluator],
   providers: [queryWorkspaceByOwnerProvider],
   services: [
