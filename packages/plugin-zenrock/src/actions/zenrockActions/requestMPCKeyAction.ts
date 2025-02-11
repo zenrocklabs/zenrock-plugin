@@ -1,48 +1,79 @@
-import { Action, Content, IAgentRuntime, Memory, State } from '@elizaos/core';
+import {
+  Action,
+  composeContext,
+  Content,
+  generateObject,
+  IAgentRuntime,
+  Memory,
+  ModelClass,
+  State,
+} from '@elizaos/core';
 import { requestMPCKey } from '../../utils/zenrock/workspace/workspaceService';
+import {
+  extractNewMPCKeyParamsTemplate,
+  mapKeyType,
+  RequestMPCKeyContent,
+} from '../../utils/zenrock/newMPCKeyInstructionsTemplate';
 
-export interface RequestMPCKeyContent extends Content {
-  workspace?: string; // Made optional for extraction from text if missing
+function isRequestMPCKeyContent(
+  runtime: IAgentRuntime,
+  content: any
+): content is RequestMPCKeyContent {
+  return (
+    typeof content.workspace === 'string' && typeof content.keyType === 'string'
+  );
 }
 
 export const requestMPCKeyAction: Action = {
   name: 'requestMPCKey',
   similes: ['generateKey', 'newKey'],
-  description:
-    'Requests a new MPC key for the specified workspace on the Zenrock blockchain.',
+  description: 'Requests a new MPC key for the specified workspace on the Zenrock blockchain.',
 
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
-    state?: State, // Made optional to match the Handler type
+    state?: State,
     _options?: any,
     callback?: (response: any) => void
   ) => {
-    // Ensure state is provided.
     if (!state) {
-      throw new Error('State is required but was undefined.');
+      state = (await runtime.composeState(message)) as State;
+    } else {
+      state = await runtime.updateRecentMessageState(state);
     }
+
     console.log('🔑 Requesting MPC key...');
     try {
-      // Cast the message content
-      const content = message.content as RequestMPCKeyContent;
-    //   console.log('content from the conversation: ', JSON.stringify(content));
-      // This regex matches any substring that starts with "workspace" followed by letters and/or digits.
-      const match = content.text.match(/(workspace[\w\d]+)/i);
-      if (match && match[1]) {
-        content.workspace = match[1];
-        console.log(`Extracted workspace: ${content.workspace}`);
-      } else {
-        throw new Error(
-          'Workspace address could not be extracted from the text.'
-        );
+      const newMPCKeyContext = composeContext({
+        state,
+        template: extractNewMPCKeyParamsTemplate,
+      });
+
+      const content = await generateObject({
+        runtime,
+        context: newMPCKeyContext,
+        modelClass: ModelClass.LARGE,
+      });
+
+      if (!isRequestMPCKeyContent(runtime, content)) {
+        if (callback) {
+          callback({
+            text: 'Unable to process the request. Invalid content provided.',
+            content: { error: 'Invalid request content' },
+          });
+        }
+        return false;
       }
 
-      // Request the MPC key using the extracted or provided workspace address.
-      const result = await requestMPCKey(content.workspace);
+      // 🗝️ Map keyType to the correct enum value
+      const keyTypeEnum = mapKeyType(content.keyType);
+
+      // 🚀 Request the MPC key using both workspace and keyType
+      const result = await requestMPCKey(content.workspace, keyTypeEnum);
       if (!result) {
         throw new Error('no result');
       }
+
       console.log(`✅ MPC Key Request Successful! TxHash: ${result}`);
       if (callback) {
         callback({
@@ -63,9 +94,7 @@ export const requestMPCKeyAction: Action = {
     }
   },
 
-  validate: async (runtime: IAgentRuntime) => {
-    return true;
-  },
+  validate: async (runtime: IAgentRuntime) => true,
 
   examples: [
     [

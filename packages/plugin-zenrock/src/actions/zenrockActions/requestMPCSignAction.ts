@@ -23,7 +23,7 @@ export const requestMPCSignAction: Action = {
     handler: async (
       runtime: IAgentRuntime,
       message: Memory,
-      state?: State, // Made optional to match the Handler type
+      state?: State,
       _options?: any,
       callback?: (response: any) => void
     ) => {

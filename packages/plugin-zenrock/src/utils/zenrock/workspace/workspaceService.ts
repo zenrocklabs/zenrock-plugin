@@ -93,7 +93,7 @@ export async function queryWorkspaceByOwner(
 
 export async function requestMPCKey(
   workspaceAddr: string,
-  keyType: KeyType = KeyType.KEY_TYPE_ECDSA_SECP256K1,
+  keyType: KeyType,
   signPolicyId: number = 0,
   keyringAddr: string = 'keyring1k6vc6vhp6e6l3rxalue9v4ux'
 ) {

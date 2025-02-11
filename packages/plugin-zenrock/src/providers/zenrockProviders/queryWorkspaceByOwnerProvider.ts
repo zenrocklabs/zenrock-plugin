@@ -34,7 +34,7 @@ const queryWorkspaceByOwnerProvider: Provider = {
 
           return `Workspace address: ${ws.address || 'No address for Workspace'} 
                 with Owners: ${ws.owners || 'unknown'} 
-                with generated keys: ${evmAddresses.join(', ')}`;
+                and the workspace has generated keys: ${evmAddresses.join(', ')}`;
         })
       );
 

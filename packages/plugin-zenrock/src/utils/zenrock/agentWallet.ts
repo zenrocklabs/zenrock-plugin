@@ -21,7 +21,7 @@ export async function generateWallet() {
   const keypair = await Secp256k1.makeKeypair(privateKey);
   const wallet = await DirectSecp256k1Wallet.fromKey(privateKey, walletPrefix);
   const [account] = await wallet.getAccounts();
-
+  console.log("Agent Wallet: ", account.address)
   return {
     privateKey: Buffer.from(privateKey).toString('hex'),
     publicKey: Buffer.from(keypair.pubkey).toString('hex'),
