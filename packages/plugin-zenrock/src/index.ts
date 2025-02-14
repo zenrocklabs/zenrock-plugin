@@ -3,6 +3,7 @@ import { createWorkspaceAction } from "./actions/createWorkspaceAction";
 import { queryUserWorkspacesAction } from "./actions/queryUserWorkspacesAction";
 import { queryUserWorkspaceAction } from "./actions/queryUserWorkspaceAction";
 import { requestKeyAction } from "./actions/requestKeyAction";
+import { queryKeysForWorkspaceAction } from "./actions/queryKeysForWorkspaceAction";
 export const zenrockPlugin: Plugin = {
     name: "zenrock",
     description:
@@ -12,6 +13,7 @@ export const zenrockPlugin: Plugin = {
         queryUserWorkspacesAction,
         queryUserWorkspaceAction,
         requestKeyAction,
+        queryKeysForWorkspaceAction
     ],
     evaluators: [],
     providers: [],
