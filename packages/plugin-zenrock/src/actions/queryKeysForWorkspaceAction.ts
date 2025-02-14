@@ -14,7 +14,7 @@ import {
     extractQueryKeysForWorkspaceParamsTemplate,
     QueryKeysForWorkspaceContent,
 } from "./instructions/queryKeysForWorkspaceInstructionsTemplate";
-import { normalizeStringWalletType, walletTypeToString } from "../services/utils";
+import { normalizeStringWalletType } from "../services/utils";
 import { WalletResponse } from "../types/zenrock/treasury/zrchain/query";
 
 function isQueryKeysForWorkspaceContent(
