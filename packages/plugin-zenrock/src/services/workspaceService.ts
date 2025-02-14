@@ -17,7 +17,7 @@ import {
 } from "../types/zenrock/treasury/zrchain/query";
 import { VerificationVersion } from "../types/zenrock/treasury/zrchain/tx";
 import { WalletType } from "../types/zenrock/treasury/zrchain/wallet";
-import { QueryWorkspacesRequest } from "../types/zenrock/workspace/zrchain/query";
+import { QueryWorkspacesRequest, QueryWorkspaceByAddressRequest } from "../types/zenrock/workspace/zrchain/query";
 import { DENOM, DEFAULT_AMOUNT, DEFAULT_GAS, normalizeKeyType } from "./utils";
 import { elizaLogger } from "@elizaos/core";
 
@@ -90,6 +90,34 @@ export async function queryWorkspaceByOwner(
         return response.workspaces;
     } catch (error) {
         elizaLogger.error("❌ Error fetching workspaces:", error);
+        throw error;
+    }
+}
+
+/**
+ * Queries workspaces by its address.
+ * @param workspaceAddress - The address of the workspace.
+ * @returns The workspace of the given address.
+ */
+export async function queryWorkspaceByAddress(
+    workspaceAddress: string = "",
+) {
+    if (!workspaceAddress) {
+        throw new Error("❌ Workspace address is required.");
+    }
+
+    elizaLogger.debug("🔍 Querying workspace for address:", workspaceAddress);
+    const queryClient = await getZenrockWorkspaceQueryClient(rpcUrl);
+    const request: QueryWorkspaceByAddressRequest = {
+        workspaceAddr: workspaceAddress,
+    };
+
+    try {
+        const response = await queryClient.WorkspaceByAddress(request);
+        // console.log('✅ Workspaces retrieved:', response.workspaces);
+        return response;
+    } catch (error) {
+        elizaLogger.error("❌ Error fetching workspace:", error);
         throw error;
     }
 }
