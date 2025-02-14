@@ -9,7 +9,12 @@ import { StdFee } from "@cosmjs/stargate";
 
 import { KeyType } from "../types/zenrock/treasury/zrchain/key";
 import { Any } from "../types/zenrock/google/protobuf/any";
-import { QueryKeyByIDRequest, QueryKeysRequest, QueryKeyByAddressRequest, QuerySignatureRequestByIDRequest } from "../types/zenrock/treasury/zrchain/query";
+import {
+    QueryKeyByIDRequest,
+    QueryKeysRequest,
+    QueryKeyByAddressRequest,
+    QuerySignatureRequestByIDRequest,
+} from "../types/zenrock/treasury/zrchain/query";
 import { VerificationVersion } from "../types/zenrock/treasury/zrchain/tx";
 import { WalletType } from "../types/zenrock/treasury/zrchain/wallet";
 import { QueryWorkspacesRequest } from "../types/zenrock/workspace/zrchain/query";
@@ -137,7 +142,7 @@ export async function requestMPCKey(
         gas: DEFAULT_GAS.toString(),
     };
 
-    elizaLogger.debug('\n🚀 Sending MPC key request transaction...');
+    elizaLogger.debug("\n🚀 Sending MPC key request transaction...");
     const result = await broadcastTransaction(
         client,
         account[0].address,
@@ -146,7 +151,7 @@ export async function requestMPCKey(
     );
     if (result.code === 0) {
         elizaLogger.debug(
-          `✅ MPC Key Request Successful! TxHash: ${result.transactionHash}`
+            `✅ MPC Key Request Successful! TxHash: ${result.transactionHash}`
         );
     } else {
         elizaLogger.error(`❌ MPC Key Request Failed: ${result.rawLog}`);
@@ -157,8 +162,8 @@ export async function requestMPCKey(
 
     const request: QueryKeyByIDRequest = {
         id: reqId,
-        walletType: WalletType.WALLET_TYPE_EVM,
-        prefixes: ["zen"],
+        walletType: WalletType.WALLET_TYPE_UNSPECIFIED,
+        prefixes: [],
     };
 
     const sleep = (ms: number) =>
@@ -185,7 +190,7 @@ export async function requestMPCKey(
 
             // Use the first wallet since only one is present
             const walletAddress = response.wallets[0].address;
-            elizaLogger.debug('✅ Key response retrieved:', walletAddress);
+            elizaLogger.debug("✅ Key response retrieved:", walletAddress);
             return walletAddress;
         } catch (error) {
             elizaLogger.error(`❌ Attempt ${attempt + 1} failed:`, error);
@@ -310,7 +315,7 @@ export async function requestMPCSign(
     );
     if (result.code === 0) {
         elizaLogger.debug(
-          `✅ MPC Signature Request Successful! TxHash: ${result.transactionHash}`
+            `✅ MPC Signature Request Successful! TxHash: ${result.transactionHash}`
         );
     } else {
         elizaLogger.error(`❌ MPC Signature Request Failed: ${result.rawLog}`);
@@ -482,7 +487,10 @@ export async function requestMPCSignTx(
             // Use the first wallet since only one is present
             const signature = response.signRequest.signedData;
             elizaLogger.debug("✅ Signature response retrieved:", signature);
-            elizaLogger.debug("✅ Signature request ID:", signature[0].signRequestId);
+            elizaLogger.debug(
+                "✅ Signature request ID:",
+                signature[0].signRequestId
+            );
             elizaLogger.debug("✅ Signature:", signature[0].signedData);
             return signature;
         } catch (error) {

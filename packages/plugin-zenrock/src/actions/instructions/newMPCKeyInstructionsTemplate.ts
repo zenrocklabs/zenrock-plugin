@@ -5,7 +5,7 @@ export const extractNewMPCKeyParamsTemplate = `
 Recent messages: {{recentMessages}}
 
 # Instructions:
-Given the recent messages, analyze the user's message to extract the following parameters needed for requesting a new MPC key:
+Given the recent messages, analyze the user's messages to extract the following parameters needed for requesting a new MPC key:
 
 ## Workspace Identification
 - Identify the **workspace** using the pattern: 

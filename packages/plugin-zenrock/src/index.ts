@@ -2,6 +2,7 @@ import { Plugin, Action, Evaluator, Provider } from "@elizaos/core";
 import { createWorkspaceAction } from "./actions/createWorkspaceAction";
 import { queryUserWorkspacesAction } from "./actions/queryUserWorkspacesAction";
 import { requestKeyAction } from "./actions/requestKeyAction";
+import { queryKeysForWorkspaceAction } from "./actions/queryKeysForWorkspaceAction";
 export const zenrockPlugin: Plugin = {
     name: "zenrock",
     description:
@@ -10,6 +11,7 @@ export const zenrockPlugin: Plugin = {
         createWorkspaceAction,
         queryUserWorkspacesAction,
         requestKeyAction,
+        queryKeysForWorkspaceAction
     ],
     evaluators: [],
     providers: [],
