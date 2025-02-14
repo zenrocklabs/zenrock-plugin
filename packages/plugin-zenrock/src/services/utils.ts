@@ -60,6 +60,35 @@ export function normalizeWalletType(string: string): WalletType {
     }
 }
 
+export function normalizeStringWalletType(stringWalletType: string): string {
+    switch (stringWalletType) {
+        case "WALLET_TYPE_NATIVE":
+        case "native":
+            return "native";
+        case "WALLET_TYPE_EVM":
+        case "EVM":
+        case "evm":
+            return "EVM";
+        case "WALLET_TYPE_BTC_TESTNET":
+        case "btc_testnet":
+            return "TBTC";
+        case "WALLET_TYPE_BTC_MAINNET":
+        case "btc_mainnet":
+            return "BTC";
+        case "WALLET_TYPE_BTC_REGNET":
+        case "btc_regnet":
+            return "btc_regnet";
+        case "WALLET_TYPE_SOLANA":
+        case "solana":
+            return "SOL";
+        case "WALLET_TYPE_UNSPECIFIED":
+        case "unspecified":
+            return "unspecified";
+        default:
+            throw new Error(`Unrecognized wallet type: ${stringWalletType}`);
+    }
+}
+
 export function createMetadata(chainId: number): Any {
     const metadata: MetadataEthereum = {
         chainId: chainId,

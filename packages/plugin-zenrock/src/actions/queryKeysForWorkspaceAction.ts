@@ -14,6 +14,8 @@ import {
     extractQueryKeysForWorkspaceParamsTemplate,
     QueryKeysForWorkspaceContent,
 } from "./instructions/queryKeysForWorkspaceInstructionsTemplate";
+import { normalizeStringWalletType, walletTypeToString } from "../services/utils";
+import { WalletResponse } from "../types/zenrock/treasury/zrchain/query";
 
 function isQueryKeysForWorkspaceContent(
     runtime: IAgentRuntime,
@@ -124,8 +126,10 @@ export const queryKeysForWorkspaceAction: Action = {
                         }
                         const walletList = filteredWallets
                             .map(
-                                (wallet: any) =>
-                                    `${wallet.type}: ${wallet.address}`
+                                (wallet: WalletResponse) =>
+                                    `${normalizeStringWalletType(wallet.type)}: ${
+                                        wallet.address
+                                    }`
                             )
                             .join(", ");
                         return `${index + 1}. ${walletList}`;
@@ -135,8 +139,8 @@ export const queryKeysForWorkspaceAction: Action = {
 
                 responseText =
                     formattedKeys.length > 0
-                        ? `Non-native wallets for workspace ${content.workspace}:\n${formattedKeys}`
-                        : `No non-native wallets found for workspace ${content.workspace}.`;
+                        ? `Wallets for workspace ${content.workspace}:\n${formattedKeys}`
+                        : `No wallets found for workspace ${content.workspace}.`;
             } else {
                 responseText = `No keys found for workspace ${content.workspace}.`;
             }
