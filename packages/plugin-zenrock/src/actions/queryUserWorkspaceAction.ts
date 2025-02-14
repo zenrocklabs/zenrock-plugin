@@ -138,7 +138,7 @@ export const queryUserWorkspaceAction: Action = {
 
             if (keys && keys.length > 0) {
                 const formattedKeys = keys
-                    .map((key, index) => {
+                    .map((key) => {
                         const filteredWallets = key.wallets.filter(
                             (wallet: any) =>
                                 wallet.type !== "WALLET_TYPE_NATIVE"
@@ -149,31 +149,39 @@ export const queryUserWorkspaceAction: Action = {
                         const walletList = filteredWallets
                             .map(
                                 (wallet: WalletResponse) =>
-                                    `${normalizeStringWalletType(
+                                    `• ${normalizeStringWalletType(
                                         wallet.type
                                     )}: ${wallet.address}`
                             )
-                            .join(", ");
-                        return `KeyId: ${key.key.id} of type ${key.key.type} \n ${walletList}`;
+                            .join("\n        ");
+                        return `Key ID: ${key.key.id} (${key.key.type})
+    Wallets:
+        ${walletList}`;
                     })
                     .filter((item) => item !== null)
-                    .join("\n");
+                    .join("\n\n");
 
-                responseText = `🏢 Workspace Details:\n
-        - Address: ${workspace.workspace.address}
-        - Owners:\n ${workspace.workspace.owners
-            .map((owner, index) => `${index + 1}. ${owner}`)
-            .join("\n")}
-        - Sign Policy ID: ${workspace.workspace.signPolicyId}
-        - Admin Policy ID: ${workspace.workspace.adminPolicyId}\n\n
-        - Keys:\n${
-            formattedKeys.length > 0
-                ? formattedKeys
-                : `No wallets found for workspace ${content.workspace}.`
-        }`;
+                responseText = `🏢 Workspace Details:
+• Address: ${workspace.workspace.address}
+
+• Owners:
+${workspace.workspace.owners
+    .map((owner, index) => `    ${index + 1}. ${owner}`)
+    .join("\n")}
+
+• Sign Policy ID: ${workspace.workspace.signPolicyId}
+• Admin Policy ID: ${workspace.workspace.adminPolicyId}
+
+🔑 Keys:
+${
+    formattedKeys
+        ? formattedKeys
+        : `No non-native wallets found for workspace ${content.workspace}.`
+}`;
             } else {
                 responseText = `No keys found for workspace ${content.workspace}.`;
             }
+
             elizaLogger.debug("Formatted response:", responseText);
 
             if (callback) {
