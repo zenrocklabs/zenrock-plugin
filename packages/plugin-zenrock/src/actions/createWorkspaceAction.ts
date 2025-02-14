@@ -61,14 +61,14 @@ export const createWorkspaceAction: Action = {
                 additionalOwners
             );
             if (result.code === 0) {
-                console.log(
+                elizaLogger.debug(
                     `✅ Transaction successful! TxHash: ${result.transactionHash}`
                 );
             } else {
-                console.error(`❌ Transaction failed: ${result.rawLog}`);
+                elizaLogger.error(`❌ Transaction failed: ${result.rawLog}`);
             }
             if (result.code === 0) {
-                console.log(
+                elizaLogger.debug(
                     `✅ Workspace created successfully! TxHash: ${result.transactionHash}`
                 );
                 if (callback) {
@@ -90,7 +90,7 @@ export const createWorkspaceAction: Action = {
             const errorText = `❌ Error creating workspace: ${
                 error.message || error
             }`;
-            console.error(errorText);
+            elizaLogger.error(errorText);
             if (callback) {
                 callback({
                     text: errorText,

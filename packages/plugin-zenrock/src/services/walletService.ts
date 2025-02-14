@@ -10,8 +10,8 @@ const hexSeed: string =
     })();
 
 export async function generateCosmosWallet(
-    walletPrefix: string = "zen",
-    uuid: string = ""
+    uuid: string = "",
+    walletPrefix: string = "zen"
 ) {
     let seed = hexSeed;
     if (uuid) {
