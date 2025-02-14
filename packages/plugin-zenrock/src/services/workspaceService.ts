@@ -20,6 +20,7 @@ import { WalletType } from "../types/zenrock/treasury/zrchain/wallet";
 import { QueryWorkspacesRequest } from "../types/zenrock/workspace/zrchain/query";
 import { DENOM, DEFAULT_AMOUNT, DEFAULT_GAS, normalizeKeyType } from "./utils";
 import { elizaLogger } from "@elizaos/core";
+import type { DeliverTxResponse } from "@cosmjs/cosmwasm-stargate";
 
 const rpcUrl: string =
     process.env.ZR_RPC ??
@@ -260,7 +261,6 @@ export async function queryKeyByAddress(keyAddress: string) {
 }
 
 export async function requestMPCSign(
-    creator: string,
     keyId: number,
     dataForSigning: string,
     btl: number,
@@ -268,20 +268,16 @@ export async function requestMPCSign(
     verifySigningData: Uint8Array,
     verifySigningDataVersion: VerificationVersion
 ) {
-    elizaLogger.debug("🔑 Preparing MPC signature request transaction...");
+    console.log("🔑 Preparing MPC signature request transaction...");
 
     if (!keyId) {
         throw new Error("❌ Key ID is missing or invalid.");
     }
-    elizaLogger.debug("✅ Using Key ID:", keyId);
+    console.log("✅ Using Key ID:", keyId);
 
     const { wallet } = await generateCosmosWallet();
     const client = await getZenrockClient(rpcUrl, wallet);
     const account = await wallet.getAccounts();
-
-    // console.log('✅ Using Account Address:', account[0].address);
-    // const keyTypeStr = normalizeKeyType(keyType);
-    // console.log('✅ keyTypeStr:', keyTypeStr);
 
     if (!dataForSigning) {
         throw new Error(`❌ Data for signing is missing or invalid.`);
@@ -306,7 +302,7 @@ export async function requestMPCSign(
         gas: DEFAULT_GAS.toString(),
     };
 
-    // console.log('\n🚀 Sending MPC signature request transaction...');
+    elizaLogger.debug("\n🚀 Sending MPC signature request transaction...");
     const result = await broadcastTransaction(
         client,
         account[0].address,
@@ -317,12 +313,17 @@ export async function requestMPCSign(
         elizaLogger.debug(
             `✅ MPC Signature Request Successful! TxHash: ${result.transactionHash}`
         );
+        return result;
     } else {
-        elizaLogger.error(`❌ MPC Signature Request Failed: ${result.rawLog}`);
+        throw new Error(`❌ MPC Signature Request Failed: ${result.rawLog}`);
     }
+}
+export async function getMPCSignature(
+    txResp: DeliverTxResponse
+): Promise<Uint8Array> {
     const queryClient = await getZenrockKeyQueryClient(rpcUrl);
 
-    const signId = result.msgResponses[0].value[1]; // Uint8Array
+    const signId = txResp.msgResponses[0].value[1]; // Uint8Array
 
     const request: QuerySignatureRequestByIDRequest = {
         id: signId,
@@ -354,150 +355,24 @@ export async function requestMPCSign(
             }
 
             // Use the first wallet since only one is present
-            const signature = response.signRequest.signedData;
-            // console.log('✅ Signature response retrieved:', signature);
-            // console.log('✅ Signature request ID:', signature[0].signRequestId);
-            // console.log('✅ Signature:', signature[0].signedData);
+            const signature = response.signRequest.signedData[0].signedData;
+            const hexSignature = Buffer.from(signature).toString("hex"); // Convert signedData to hex
+
+            elizaLogger.debug(
+                "✅ Signature response retrieved:",
+                response.signRequest.id
+            );
+            elizaLogger.debug(
+                "✅ Signature request ID:",
+                response.signRequest.signedData[0].signRequestId
+            );
+            elizaLogger.debug("✅ Signature:", hexSignature);
             return signature;
         } catch (error) {
             elizaLogger.warn(`❌ Attempt ${attempt + 1} failed:`, error);
 
             if (attempt < retries - 1) {
-                elizaLogger.log(`⏳ Retrying in ${delay / 1000} seconds...`);
-                await sleep(delay);
-            } else {
-                elizaLogger.error("🚨 All retry attempts failed.");
-                throw error;
-            }
-        }
-    }
-}
-
-export async function requestMPCSignTx(
-    creator: string,
-    keyId: number,
-    walletType: WalletType,
-    unsignedTransaction: Uint8Array,
-    metadata: Any | undefined,
-    btl: number,
-    cacheId: Uint8Array,
-    noBroadcast: boolean
-) {
-    elizaLogger.debug("🔑 Preparing MPC signature request transaction...");
-
-    if (!keyId) {
-        throw new Error("❌ Key ID is missing or invalid.");
-    }
-    elizaLogger.debug("✅ Using Key ID:", keyId);
-
-    if (!walletType) {
-        throw new Error("❌ Wallet type is missing or invalid.");
-    }
-    elizaLogger.debug("✅ Using Wallet Type:", walletType);
-
-    if (!unsignedTransaction) {
-        throw new Error("❌ Unsigned transaction is missing or invalid.");
-    }
-    elizaLogger.debug("✅ Using Unsigned Transaction:", unsignedTransaction);
-
-    if (!metadata) {
-        throw new Error("❌ Metadata is missing or invalid.");
-    }
-    elizaLogger.debug("✅ Using Metadata:", metadata);
-
-    const { wallet } = await generateCosmosWallet();
-    const client = await getZenrockClient(rpcUrl, wallet);
-    const account = await wallet.getAccounts();
-
-    elizaLogger.debug("✅ Using Account Address:", account[0].address);
-    // const keyTypeStr = normalizeKeyType(keyType);
-    // console.log('✅ keyTypeStr:', keyTypeStr);
-
-    const msgRequestSignTransaction = {
-        typeUrl: "/zrchain.treasury.MsgNewSignTransactionRequest",
-        value: {
-            creator: account[0].address,
-            keyId,
-            walletType,
-            unsignedTransaction,
-            metadata,
-            btl,
-            cacheId,
-            noBroadcast,
-        },
-    };
-
-    // Define transaction fee
-    const fee: StdFee = {
-        amount: [{ denom: DENOM, amount: DEFAULT_AMOUNT.toString() }],
-        gas: DEFAULT_GAS.toString(),
-    };
-
-    elizaLogger.debug(
-        "\n🚀 Sending MPC transaction signature request transaction..."
-    );
-    const result = await broadcastTransaction(
-        client,
-        account[0].address,
-        [msgRequestSignTransaction],
-        fee
-    );
-    if (result.code === 0) {
-        elizaLogger.debug(
-            `✅ MPC Sign Transaction Request Successful! TxHash: ${result.transactionHash}`
-        );
-    } else {
-        elizaLogger.error(
-            `❌ MPC Sign Transaction Request Failed: ${result.rawLog}`
-        );
-    }
-    const queryClient = await getZenrockKeyQueryClient(rpcUrl);
-
-    const signId = result.msgResponses[0].value[1]; // Uint8Array
-
-    const request: QuerySignatureRequestByIDRequest = {
-        id: signId,
-    };
-
-    const sleep = (ms: number) =>
-        new Promise((resolve) => setTimeout(resolve, ms));
-    const retries = 5,
-        delay = 1000;
-
-    await sleep(15000); // Initial 15-second delay
-
-    for (let attempt = 0; attempt < retries; attempt++) {
-        try {
-            const response = await queryClient.SignatureRequestByID(request);
-
-            // Ensure wallets exist and at least one wallet is present
-            if (
-                !response.signRequest ||
-                response.signRequest.signedData.length === 0
-            ) {
-                throw new Error(
-                    `Response does not contain signature responses: ${JSON.stringify(
-                        response,
-                        null,
-                        2
-                    )}`
-                );
-            }
-
-            // Use the first wallet since only one is present
-            const signature = response.signRequest.signedData;
-            elizaLogger.debug("✅ Signature response retrieved:", signature);
-            elizaLogger.debug(
-                "✅ Signature request ID:",
-                signature[0].signRequestId
-            );
-            elizaLogger.debug("✅ Signature:", signature[0].signedData);
-            return signature;
-        } catch (error) {
-            elizaLogger.error(`❌ Attempt ${attempt + 1} failed:`, error);
-
-            if (attempt < retries - 1) {
-                elizaLogger.warn(`⏳ Retrying in ${delay / 1000} seconds...`);
+                elizaLogger.debug(`⏳ Retrying in ${delay / 1000} seconds...`);
                 await sleep(delay);
             } else {
                 elizaLogger.error("🚨 All retry attempts failed.");
