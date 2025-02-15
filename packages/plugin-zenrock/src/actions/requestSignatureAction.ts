@@ -136,10 +136,6 @@ export const requestSignatureAction: Action = {
             if (!signReq) {
                 throw new Error("No result from MPC signature request.");
             }
-            elizaLogger.debug(
-                "MPC Signature Request Successful! Result:",
-                JSON.stringify(signReq)
-            );
 
             // Retrieve the signature (this may also involve a polling function if needed).
             const signature = await getMPCSignature(signReq);
@@ -156,10 +152,7 @@ export const requestSignatureAction: Action = {
             };
 
             if (callback) {
-                callback({
-                    text: "MPC Signature retrieved.",
-                    content: JSON.stringify(responseContent),
-                });
+                callback(JSON.stringify(responseContent));
             }
             return true;
         } catch (error: any) {
