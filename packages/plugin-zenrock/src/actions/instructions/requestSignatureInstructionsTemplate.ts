@@ -40,4 +40,5 @@ export interface RequestSignatureContent extends Content {
 export interface ResponseSignatureContent extends RequestSignatureContent {
     zenrockTx: string;
     signature: string;
+    requestID: string;
 }

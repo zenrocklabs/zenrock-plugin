@@ -18,7 +18,7 @@ import {
 import { VerificationVersion } from "../types/zenrock/treasury/zrchain/tx";
 import { WalletType } from "../types/zenrock/treasury/zrchain/wallet";
 import { QueryWorkspacesRequest } from "../types/zenrock/workspace/zrchain/query";
-import { DENOM, DEFAULT_AMOUNT, DEFAULT_GAS, normalizeKeyType } from "./utils";
+import { DENOM, DEFAULT_AMOUNT, DEFAULT_GAS, normalizeKeyType, normalizeAddressToWalletType, getKeyTypeByWalletType } from "./utils";
 import { elizaLogger } from "@elizaos/core";
 import type { DeliverTxResponse } from "@cosmjs/cosmwasm-stargate";
 
@@ -240,13 +240,16 @@ export async function queryKeyByAddress(keyAddress: string) {
         throw new Error("❌ Key address is required.");
     }
 
+    const walletType = normalizeAddressToWalletType(keyAddress);
+    const keyType = getKeyTypeByWalletType(walletType);
+
     elizaLogger.debug("🔍 Querying for key by address:", keyAddress);
     const queryClient = await getZenrockKeyQueryClient(rpcUrl);
     const request: QueryKeyByAddressRequest = {
         address: keyAddress,
         keyringAddr: "",
-        keyType: KeyType.KEY_TYPE_ECDSA_SECP256K1,
-        walletType: WalletType.WALLET_TYPE_EVM,
+        keyType: keyType,
+        walletType: walletType,
         prefixes: [],
     };
 

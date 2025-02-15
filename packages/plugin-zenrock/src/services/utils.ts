@@ -4,8 +4,8 @@ import { MetadataEthereum } from "../types/zenrock/treasury/zrchain/tx";
 import { WalletType } from "../types/zenrock/treasury/zrchain/wallet";
 
 export const DENOM = "urock";
-export const DEFAULT_GAS = 200000;
-export const DEFAULT_AMOUNT = 500000;
+export const DEFAULT_GAS = 1000000;
+export const DEFAULT_AMOUNT = 10000000;
 
 export function toUtf8String(byteArray: Uint8Array): string {
     return new TextDecoder().decode(byteArray);
@@ -36,6 +36,22 @@ export function getWalletTypeByKeyType(keyType: KeyType): WalletType {
         case KeyType.UNRECOGNIZED:
         default:
             return WalletType.WALLET_TYPE_UNSPECIFIED;
+    }
+}
+
+export function getKeyTypeByWalletType(walletType: WalletType): KeyType {
+    switch (walletType) {
+        case WalletType.WALLET_TYPE_EVM:
+            return KeyType.KEY_TYPE_ECDSA_SECP256K1;
+        case WalletType.WALLET_TYPE_NATIVE:
+            return KeyType.KEY_TYPE_ECDSA_SECP256K1;
+        case WalletType.WALLET_TYPE_SOLANA:
+            return KeyType.KEY_TYPE_EDDSA_ED25519;
+        case WalletType.WALLET_TYPE_BTC_MAINNET:
+            return KeyType.KEY_TYPE_BITCOIN_SECP256K1;
+        case WalletType.UNRECOGNIZED:
+        default:
+            return KeyType.UNRECOGNIZED;
     }
 }
 
@@ -88,6 +104,38 @@ export function normalizeStringWalletType(stringWalletType: string): string {
             throw new Error(`Unrecognized wallet type: ${stringWalletType}`);
     }
 }
+
+export function normalizeAddressToWalletType(address: string): WalletType {
+    switch (true) {
+        case address.startsWith("0x"):
+            return WalletType.WALLET_TYPE_EVM;
+        case address.startsWith("tb1"):
+            return WalletType.WALLET_TYPE_BTC_TESTNET;
+        case address.startsWith("bc1"):
+            return WalletType.WALLET_TYPE_BTC_MAINNET;
+        case isBase58Encoded(address):
+            return WalletType.WALLET_TYPE_SOLANA;
+        default:
+            return WalletType.WALLET_TYPE_NATIVE;
+    }
+}
+
+function isBase58Encoded(value: string): boolean {
+    /**
+     * Checks if a string is Base58-encoded.
+     * Base58 strings consist of the following characters:
+     * 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz
+     *
+     * @param value - The string to validate.
+     * @returns True if the string is Base58-encoded, otherwise false.
+     */
+    const base58Regex = /^[A-HJ-NP-Za-km-z1-9]+$/;
+  
+    // Check if the string matches the Base58 regex
+    return base58Regex.test(value);
+  }
+  
+  
 
 export function createMetadata(chainId: number): Any {
     const metadata: MetadataEthereum = {

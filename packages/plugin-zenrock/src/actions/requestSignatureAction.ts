@@ -149,11 +149,15 @@ export const requestSignatureAction: Action = {
                 from: content.from,
                 zenrockTx: signReq.transactionHash,
                 signature: hexSignature,
+                requestID: signReq.msgResponses[0].value[1].toString()
             };
 
-            if (callback) {
-                callback(JSON.stringify(responseContent));
-            }
+            elizaLogger.debug("Response content:", JSON.stringify(responseContent));
+
+            if (callback) callback({
+                text: `MPC Signature has been successfully retrieved! ${responseContent.signature} 
+                Request ID: ${responseContent.requestID}`,
+            });
             return true;
         } catch (error: any) {
             const errorText = `❌ Error requesting MPC Signature: ${
