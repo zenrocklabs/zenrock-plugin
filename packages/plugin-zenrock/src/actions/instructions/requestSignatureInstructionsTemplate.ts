@@ -10,7 +10,7 @@ Analyze the user's messages to extract the following parameters needed to reques
 - Extract the **hash** which is the precomputed transaction hash that needs to be signed.
 
 ## Sender Identification
-- Extract the sender address (the "from" field).
+- Extract the sender address (the "from" field). The sender address never contains '-'
 
 # JSON Response Format
 Return only a JSON object with the following structure:
@@ -20,7 +20,12 @@ Return only a JSON object with the following structure:
   "from": "0xUserAddress"
 }
 \`\`\`
-
+\`\`\`json
+{
+  "hash": "0xabcdef1234567890",
+  "from": "h3pV38ZLw21xBukqu2nzfKKeGpB9MgtMxu6Yovgbryv"
+}
+\`\`\`
 # Example:
 User Message: "Sign this hash: 0xabcdef1234567890 from 0xUserAddress."
 Response:
